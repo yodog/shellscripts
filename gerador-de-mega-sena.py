@@ -12,7 +12,7 @@ import random
 import sys
 
 __author__  = 'RASG'
-__version__ = '2019.12.11.1327'
+__version__ = '2019.12.11.1357'
 
 # calcula o preco dos jogos da mega-sena (individual, total)
 def preco(n, d):
@@ -28,12 +28,12 @@ def bolao(valortotal, numparticipantes):
     cota = round(valortotal / numparticipantes, 2)
     if cota < cotaminima:
         print '! atencao ! valor da cota (', cota, ') inferior ao minimo permitido pela caixa (', cotaminima, ')'
-        exit
+        sys.exit()
     return cota
 
 # cria os jogos
 def jogar(lista):
-    global jogos, universo, valortotal
+    global jogos, universo, valortotal, valorporjogador
 
     print
     print 'lista de jogos do usuario:', lista
@@ -95,6 +95,8 @@ def jogar(lista):
             # adicionar o jogo na lista de jogos
             jogos.append(jogo)
 
+    valorporjogador = valortotal / c
+
 
 # argumentos passados para este script
 scriptname = sys.argv[0]
@@ -106,8 +108,9 @@ universo = range(1, 61)
 # lista de jogos que sera impressa no final
 jogos = []
 
-# valor total gasto com os jogos
-valortotal = 0
+# valores que serao gastos com os jogos
+valorporjogador = 0
+valortotal      = 0
 
 # chamar funcao com os argumentos passados pelo usuario
 jogar(argumentos)
@@ -120,7 +123,7 @@ semrepetir = len(set(elemjogos))
 # imprimir informacoes de execucao do script
 print 'fim do script'
 print 'foram usados', semrepetir, 'numeros diferentes |', numelems, 'numeros no total'
-print 'valor total dos jogos:', valortotal
+print 'valor total dos jogos:', valortotal, '| por jogador:', valorporjogador
 
 # imprimir os jogos
 #impresso = [[str(i).zfill(2) for i in item] for item in jogos]
