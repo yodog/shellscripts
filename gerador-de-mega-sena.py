@@ -1,43 +1,69 @@
 #!/usr/bin/env python
 
+# Requires:
+# pip install sortedcontainers
+
 from ast import literal_eval
 from pprint import pprint
+from sortedcontainers import SortedSet
 
 import math
 import random
 import sys
 
 __author__  = 'RASG'
-__version__ = '2019.12.02.1753'
+__version__ = '2019.12.11.1327'
 
-# funcao que calcula o preco dos jogos da mega-sena (individual, total)
-def preco(n,d):
+# calcula o preco dos jogos da mega-sena (individual, total)
+def preco(n, d):
     p = 4.50
     f = math.factorial(d) / (math.factorial(6) * math.factorial(d - 6))
     i = p * f
     t = i * n
     return (i, t)
 
+# calcula cota de bolao
+def bolao(valortotal, numparticipantes):
+    cotaminima = 5.00
+    cota = round(valortotal / numparticipantes, 2)
+    if cota < cotaminima:
+        print '! atencao ! valor da cota (', cota, ') inferior ao minimo permitido pela caixa (', cotaminima, ')'
+        exit
+    return cota
 
-# funcao que cria os jogos
+# cria os jogos
 def jogar(lista):
     global jogos, universo, valortotal
-    jogo = []
 
+    print
     print 'lista de jogos do usuario:', lista
     print
 
     # iterar lista de tuplas
     for tupla in lista:
-        tupla = literal_eval(tupla)
-        n,d = tupla
 
+        # tratar argumentos do script e transformar cada string em uma lista
+        # adicionar o terceiro elemento (cotas) se nao for passado pelo usuario
+        # e dividir em tres variaveis
+        t = list(literal_eval(tupla))
+        if (len(t) < 3): t.append(1)
+        print t
+        n,d,c = t
+
+        # mega sena aceita no maximo 15 dezenas
+        if d > 15:
+            print 'numero de dezenas nao pode ser maior que 15'
+            print
+            sys.exit()
+
+        # calcular precos
         ci,ct = preco(n,d)
+        cb    = bolao(ct,c)
         valortotal += ct
 
         print 'universo tem', len(universo), 'numeros disponiveis'
-        print 'gerando', n, 'jogo(s) de', d, 'dezenas'
-        print 'custo', 'individual:', ci, 'total:', ct
+        print 'gerando', n, 'jogo(s) de', d, 'dezenas dividido(s) em', c, 'cota(s)'
+        print 'custo', 'individual:', ci, '| total:', ct, '| cota bolao:', cb
         print
 
         # iterar quantidade de jogos solicitados
@@ -48,24 +74,31 @@ def jogar(lista):
             # definir novamente o universo com os numeros 1 a 60
             # preencher os numeros que faltavam no jogo com uma amostra aleatoria
             if len(universo) < d:
-                print 'universo nao tem numeros disponiveis para o proximo jogo'
+                print 'universo tem', len(universo), 'numeros disponiveis mas precisamos de', d
                 print 'adicionando numeros ao universo'
                 print
 
-                jogo = universo
+                jogo = SortedSet(universo)
                 universo = range(1, 61)
-                jogo += random.sample(universo, (d - len(jogo)))
+
+                while len(jogo) < d:
+                    jogo.update(random.sample(universo, (d - len(jogo))))
 
             # se tivermos a quantidade de numeros necessarios no universo
             # pegar uma amostra aleatoria
             else:
-                jogo = sorted(random.sample(universo, d))
+                jogo = SortedSet(random.sample(universo, d))
 
             # retirar do universo os numeros usados
             universo = [e for e in universo if e not in jogo]
 
             # adicionar o jogo na lista de jogos
             jogos.append(jogo)
+
+
+# argumentos passados para este script
+scriptname = sys.argv[0]
+argumentos = sys.argv[1:]
 
 # numeros disponveis (1 a 60)
 universo = range(1, 61)
@@ -76,24 +109,30 @@ jogos = []
 # valor total gasto com os jogos
 valortotal = 0
 
-# argumentos passados para este script
-scriptname = sys.argv[0]
-argumentos = sys.argv[1:]
-
 # chamar funcao com os argumentos passados pelo usuario
 jogar(argumentos)
 
-# contar elementos recursivamente sem repetir
-ne = len(set(x for l in jogos for x in l))
+# contar recursivamente quantas dezenas foram usadas para montar os jogos
+elemjogos  = [x for l in jogos for x in l]
+numelems   = len(elemjogos)
+semrepetir = len(set(elemjogos))
 
 # imprimir informacoes de execucao do script
 print 'fim do script'
-#print 'universo tem', len(universo), 'numeros disponiveis'
-print 'foram usados', ne, 'numeros diferentes'
+print 'foram usados', semrepetir, 'numeros diferentes |', numelems, 'numeros no total'
 print 'valor total dos jogos:', valortotal
-print
 
 # imprimir os jogos
+#impresso = [[str(i).zfill(2) for i in item] for item in jogos]
+impresso = [' '.join([str(i).zfill(2) for i in item]) for item in jogos]
+
 print
-pprint([[str(i).zfill(2) for i in item] for item in jogos])
+print 'jogos na ordem definida pelo usuario'
+print
+pprint(impresso)
+
+print
+print 'jogos em ordem crescente'
+print
+pprint(sorted(impresso))
 print
